@@ -5,34 +5,64 @@ use super::cube::geometry::{Face, FACES};
 use super::cube::schemes::{ColourScheme, ColourPerm};
 use super::cube::rotations::{CubeRotation, X, X3, Y, Y3};
 
+/// Represents the color state of a single cube face as a DIM×DIM grid.
+///
+/// This stores the colors of all tiles on one face of the cube. The grid uses
+/// a standard orientation where `vals[0][0]` represents the top-left corner when
+/// viewing the face directly. The top-left corner position is defined by that face's
+/// [`principal_corner`](super::cube::geometry::Face::principal_corner).
 pub struct FaceState<const DIM: usize> {
+    /// 2D array of colors representing the face's tiles
     pub vals: [[Colour;DIM];DIM]
 }
 
 impl<const DIM: usize> FaceState<DIM> {
+    /// Creates a face state where all tiles have the same color.
+    ///
+    /// This is used to create solved face states where every tile
+    /// on the face shows the same color.
     fn flat(colour: Colour) -> Self {
         Self { vals: [[colour;DIM];DIM] }
     }
 }
 
+/// Complete state of a DIM×DIM×DIM Rubik's cube.
+///
+/// This represents the color state of all six faces of a cube. The faces are
+/// oriented according to a standard net layout:
+///
 /// ```text
-/// TOP (UP): U, FRONT: F, BOTTOM (DOWN): D, BACK: B, LEFT: L, RIGHT: R
+/// UP (TOP): U, DOWN (BOTTOM): D, LEFT: L, RIGHT: R, FRONT: F, BACK: B
 /// with orientations as if in this net
 ///  U
 /// LFR
 ///  D
 ///  B
 /// ```
+///
+/// Each face is stored as a [`FaceState<DIM>`] containing the colors of all
+/// tiles on that face. This representation supports cubes of any size
+/// through the const generic `DIM` parameter.
 pub struct RubiksState<const DIM: usize> {
+    /// The up face (top of the cube)
     pub up: FaceState<DIM>,
+    /// The down face (bottom of the cube)
     pub down: FaceState<DIM>,
+    /// The left face
     pub left: FaceState<DIM>,
+    /// The right face
     pub right: FaceState<DIM>,
+    /// The front face
     pub front: FaceState<DIM>,
+    /// The back face
     pub back: FaceState<DIM>
 }
 
 impl<const DIM: usize> RubiksState<DIM> {
+    /// Returns a reference to the state of the specified face.
+    ///
+    /// This provides a convenient way to access face data by [`Face`] enum value
+    /// rather than accessing the struct fields directly.
     pub fn face_state<'a>(&'a self, face: Face) -> &'a FaceState<DIM> {
         use Face::*;
         match face {
@@ -45,6 +75,27 @@ impl<const DIM: usize> RubiksState<DIM> {
         }
     }
 
+    /// Checks if the cube is solved in the given color scheme, allowing for any rotation.
+    ///
+    /// This implements a rotation-invariant solving algorithm that can detect when a cube
+    /// is solved regardless of its physical orientation. This is essential for cube analysis
+    /// where the cube might be rotated from its standard position.
+    ///
+    /// # Algorithm: Two-Step Rotation Detection
+    ///
+    /// 1. **Orient top color**: Find which face in the scheme has the same color as the cube's
+    ///    current top face, then rotate the scheme to align the colors.
+    /// 2. **Orient front color**: With the top aligned, find which remaining face matches
+    ///    the cube's front color, then rotate around the vertical axis to align.
+    /// 3. **Check solved state**: Verify that the fully oriented cube matches the scheme.
+    ///
+    /// This two-step approach can handle any of the 24 possible cube orientations by
+    /// systematically reducing the problem to a standard orientation check.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the cube is solved in the given scheme (possibly after rotation),
+    /// `false` otherwise.
     pub fn is_solved_up_to_rotation_in<Scheme: ColourScheme>(&self, scheme: Scheme) -> bool {
         if DIM == 0 {
             return true
@@ -102,6 +153,16 @@ impl<const DIM: usize> RubiksState<DIM> {
         }
     }
 
+    /// Checks if the cube is solved in the given color scheme with exact orientation.
+    ///
+    /// This verifies that every tile on the cube matches the expected color for that
+    /// position according to the given color scheme. Unlike [`is_solved_up_to_rotation_in`],
+    /// this requires the cube to be in the exact orientation specified by the scheme.
+    ///
+    /// # Implementation
+    ///
+    /// Iterates through every tile position `(face, row, col)` and verifies that
+    /// the actual color matches the scheme's expected color for that face.
     pub fn is_solved_in<Scheme: ColourScheme>(&self, scheme: Scheme) -> bool{
         FACES
         .iter()
@@ -114,6 +175,26 @@ impl<const DIM: usize> RubiksState<DIM> {
         .all(|(f,i,j)| self.face_state(f).vals[i][j]==scheme.from_face(f))
     }
 
+    /// Checks if the cube is solved using its current color configuration.
+    ///
+    /// This determines if the cube is in a solved state by creating a color scheme
+    /// based on the current corner tiles and checking if the entire cube matches
+    /// that scheme. This is more flexible than checking against a fixed color
+    /// scheme since it adapts to whatever color configuration the cube currently has.
+    ///
+    /// # Algorithm
+    ///
+    /// 1. Extract the corner color from each face (using the `[0][0]` position)
+    /// 2. Create a [`ColourPerm`] scheme using these colors
+    /// 3. Check if the entire cube state matches this derived scheme
+    ///
+    /// This approach automatically handles cubes that may have been scrambled
+    /// and solved in a different color orientation than the standard scheme.
+    ///
+    /// # Edge Case
+    ///
+    /// For zero-dimensional cubes (`DIM = 0`), returns `true` since there
+    /// are no tiles to be out of place.
     pub fn is_solved(&self) -> bool {
         if DIM == 0 {
             true
@@ -130,6 +211,33 @@ impl<const DIM: usize> RubiksState<DIM> {
         }
     }
 
+    /// Creates a solved cube state using the specified color scheme.
+    ///
+    /// This constructor creates a `RubiksState<DIM>` where every tile on each face
+    /// shows the color specified by the scheme for that face. This represents the
+    /// canonical solved state for the given color scheme.
+    ///
+    /// # Parameters
+    ///
+    /// * `scheme` - A color scheme implementing [`ColourScheme`] that defines
+    ///   which color should appear on each face in the solved state
+    ///
+    /// # Returns
+    ///
+    /// A new `RubiksState<DIM>` where:
+    /// - All tiles on the up face show `scheme.up()`
+    /// - All tiles on the down face show `scheme.down()`
+    /// - All tiles on the left face show `scheme.left()`
+    /// - All tiles on the right face show `scheme.right()`
+    /// - All tiles on the front face show `scheme.front()`
+    /// - All tiles on the back face show `scheme.back()`
+    ///
+    /// # Usage
+    ///
+    /// This is useful for:
+    /// - Creating reference states for comparison
+    /// - Initializing cubes for testing algorithms
+    /// - Generating target states for solving algorithms
     pub fn solved_in<Scheme: ColourScheme>(scheme: Scheme) -> Self {
         Self {
             up: FaceState::flat(scheme.up()),

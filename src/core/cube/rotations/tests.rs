@@ -110,3 +110,24 @@ fn test_rotation_inverses() {
     assert_eq!(Z * Z3, CubeRotation::ID);
     assert_eq!(Z3 * Z, CubeRotation::ID);
 }
+
+#[test]
+fn test_rotation_squares() {
+    // Test that X2 = X * X
+    assert_eq!(X * X, X2);
+
+    // Test that Y2 = Y * Y
+    assert_eq!(Y * Y, Y2);
+
+    // Test that Z2 = Z * Z
+    assert_eq!(Z * Z, Z2);
+
+    // Test that X2 is its own inverse
+    assert_eq!(X2 * X2, CubeRotation::ID);
+
+    // Test that Y2 is its own inverse
+    assert_eq!(Y2 * Y2, CubeRotation::ID);
+
+    // Test that Z2 is its own inverse
+    assert_eq!(Z2 * Z2, CubeRotation::ID);
+}
