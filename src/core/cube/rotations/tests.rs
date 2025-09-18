@@ -131,3 +131,59 @@ fn test_rotation_squares() {
     // Test that Z2 is its own inverse
     assert_eq!(Z2 * Z2, CubeRotation::ID);
 }
+
+#[test]
+fn test_face_perm_conversion() {
+    use Face::*;
+
+    // Test X rotation face permutation
+    let x_face_perm: FacePerm = X.into();
+
+    // X rotation (90° around X-axis) moves:
+    // Up -> Back, Down -> Front, Left -> Left, Right -> Right, Front -> Up, Back -> Down
+    assert_eq!(x_face_perm[Up], Back);
+    assert_eq!(x_face_perm[Down], Front);
+    assert_eq!(x_face_perm[Left], Left);
+    assert_eq!(x_face_perm[Right], Right);
+    assert_eq!(x_face_perm[Front], Up);
+    assert_eq!(x_face_perm[Back], Down);
+
+    // Test Y rotation face permutation
+    let y_face_perm: FacePerm = Y.into();
+
+    // Y rotation (90° around Y-axis) moves:
+    // Up -> Up, Down -> Down, Left -> Back, Right -> Front, Front -> Left, Back -> Right
+    assert_eq!(y_face_perm[Up], Up);
+    assert_eq!(y_face_perm[Down], Down);
+    assert_eq!(y_face_perm[Left], Back);
+    assert_eq!(y_face_perm[Right], Front);
+    assert_eq!(y_face_perm[Front], Left);
+    assert_eq!(y_face_perm[Back], Right);
+
+    // Test Z rotation face permutation
+    let z_face_perm: FacePerm = Z.into();
+
+    // Z rotation (90° around Z-axis) moves:
+    // Up -> Right, Down -> Left, Left -> Up, Right -> Down, Front -> Front, Back -> Back
+    assert_eq!(z_face_perm[Up], Right);
+    assert_eq!(z_face_perm[Down], Left);
+    assert_eq!(z_face_perm[Left], Up);
+    assert_eq!(z_face_perm[Right], Down);
+    assert_eq!(z_face_perm[Front], Front);
+    assert_eq!(z_face_perm[Back], Back);
+}
+
+#[test]
+fn test_identity_face_perm() {
+    use Face::*;
+
+    // Identity rotation should map each face to itself
+    let id_face_perm: FacePerm = CubeRotation::ID.into();
+
+    assert_eq!(id_face_perm[Up], Up);
+    assert_eq!(id_face_perm[Down], Down);
+    assert_eq!(id_face_perm[Left], Left);
+    assert_eq!(id_face_perm[Right], Right);
+    assert_eq!(id_face_perm[Front], Front);
+    assert_eq!(id_face_perm[Back], Back);
+}
