@@ -129,9 +129,6 @@ impl CubeRotation {
     /// Alias for the identity rotation using multiplicative notation.
     pub const ONE: Self = Self::ID;
 
-    /// Alias for the identity rotation using group theory notation.
-    pub const E: Self = Self::ID;
-
     /// Computes the inverse of this rotation.
     ///
     /// The inverse rotation undoes the effect of this rotation:
