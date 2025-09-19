@@ -1,4 +1,5 @@
 pub mod moves;
+pub mod tiles;
 
 use crate::core::Colour;
 use super::cube::geometry::{Face, FACES};
