@@ -74,13 +74,12 @@ fn test_associativity() {
 fn test_identity_constants() {
     // All identity constants should be equal
     assert_eq!(CubeRotation::ID, CubeRotation::ONE);
-    assert_eq!(CubeRotation::ONE, CubeRotation::E);
 
     // Identity should be a left and right identity
     assert_eq!(CubeRotation::ID * X, X);
     assert_eq!(X * CubeRotation::ID, X);
-    assert_eq!(CubeRotation::E * Y, Y);
-    assert_eq!(Y * CubeRotation::E, Y);
+    assert_eq!(CubeRotation::ONE * Y, Y);
+    assert_eq!(Y * CubeRotation::ONE, Y);
 }
 
 #[test]

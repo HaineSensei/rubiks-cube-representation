@@ -54,6 +54,8 @@ impl<const N: usize> Index<TilePos> for TilePerm<N> {
     }
 }
 
+// tile_perm[tile] -> 
+
 impl<const N: usize> Mul for TilePerm<N> {
     type Output = TilePerm<N>;
 

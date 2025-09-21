@@ -60,7 +60,8 @@ pub struct CubeRotation([CubeDiag;4]);
 
 use CubeDiag::*;
 
-/// 90° rotation around the X-axis (URF → URB → ULB → ULF → URF)
+/// 90° rotation around the X-axis
+/// URF -> URB, ULF -> ULB, URB -> ULF, ULB -> URF
 pub const X: CubeRotation = CubeRotation([URB,ULB,ULF,URF]);
 
 /// 180° rotation around the X-axis, equivalent to X²
@@ -69,7 +70,8 @@ pub const X2: CubeRotation = CubeRotation([ULF,URF,ULB,URB]);
 /// 270° rotation around the X-axis, equivalent to X³
 pub const X3: CubeRotation = CubeRotation([ULB,URB,URF,ULF]);
 
-/// 90° rotation around the Y-axis (URF → ULF → ULB → URB → URF)
+/// 90° rotation around the Y-axis
+/// URF -> ULF, ULF -> ULB, URB -> URF, ULB -> URB
 pub const Y: CubeRotation = CubeRotation([ULF,ULB,URF,URB]);
 
 /// 180° rotation around the Y-axis, equivalent to Y²
@@ -78,7 +80,8 @@ pub const Y2: CubeRotation = CubeRotation([ULB,URB,ULF,URF]);
 /// 270° rotation around the Y-axis, equivalent to Y³
 pub const Y3: CubeRotation = CubeRotation([URB,URF,ULB,ULF]);
 
-/// 90° rotation around the Z-axis (URF → ULB → URF → URB → URF)
+/// 90° rotation around the Z-axis
+/// URF -> ULB, ULF -> URF, URB -> ULF, ULB -> URB
 pub const Z: CubeRotation = CubeRotation([ULB,URF,ULF,URB]);
 
 /// 180° rotation around the Z-axis, equivalent to Z²

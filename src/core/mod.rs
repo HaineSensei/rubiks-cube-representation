@@ -24,6 +24,8 @@
 //! The [`Colour`] enum defines the six standard cube colors, providing a foundation
 //! for color scheme implementations and cube state representation.
 
+use std::ops::Add;
+
 pub mod cube;
 pub mod rubiks;
 
@@ -83,7 +85,7 @@ pub enum Colour {
 /// # Usage Examples
 ///
 /// ```
-/// use rubiks_cube_representation::core::COLOURS;
+/// use rubiks_cube_representation::core::{Colour, COLOURS};
 ///
 /// // Iterate over all colors
 /// for color in COLOURS {
@@ -96,3 +98,32 @@ pub enum Colour {
 /// }
 /// ```
 pub const COLOURS: [Colour;6] = [Colour::White, Colour::Yellow, Colour::Red, Colour::Orange, Colour::Blue, Colour::Green];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Angle {
+    Zero,
+    CWQuarter,
+    Half,
+    ACWQuarter,
+}
+
+// no I don't know why I wrote it like this and not just as ints 0..3 with addition mod 4. Okay, yes I do, and it's for readability.
+impl Add for Angle {
+    type Output = Angle;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Angle::Zero,x) => x,
+            (x, Angle::Zero) => x,
+            (Angle::CWQuarter, Angle::CWQuarter) => Angle::Half,
+            (Angle::CWQuarter, Angle::Half) => Angle::ACWQuarter,
+            (Angle::CWQuarter, Angle::ACWQuarter) => Angle::Zero,
+            (Angle::Half, Angle::CWQuarter) => Angle::ACWQuarter,
+            (Angle::Half, Angle::Half) => Angle::Zero,
+            (Angle::Half, Angle::ACWQuarter) => Angle::CWQuarter,
+            (Angle::ACWQuarter, Angle::CWQuarter) => Angle::Zero,
+            (Angle::ACWQuarter, Angle::Half) => Angle::CWQuarter,
+            (Angle::ACWQuarter, Angle::ACWQuarter) => Angle::Half,
+        }
+    }
+}
