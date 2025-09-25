@@ -6,7 +6,7 @@
 
 use std::{array::from_fn, ops::{Index, Mul}};
 
-use crate::Face;
+use crate::{core::rubiks::moves::{BasicMove, MiddleMove, RangeMove, SliceMove, WideMove}, CubeRotation, Face, RubiksState};
 
 mod implementations;
 
@@ -56,10 +56,10 @@ impl<const N: usize> Index<TilePos> for TilePerm<N> {
 
 // tile_perm[tile] -> 
 
-impl<const N: usize> Mul for TilePerm<N> {
+impl<'a, 'b, const N: usize> Mul<&'b TilePerm<N>> for &'a TilePerm<N> {
     type Output = TilePerm<N>;
 
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn mul(self, rhs: &TilePerm<N>) -> Self::Output {
         TilePerm {
             up: TileGrid { vals: from_fn(|row| from_fn(|col| {
                 let tile = TilePos { face: Face::Up, row, col };
@@ -86,6 +86,30 @@ impl<const N: usize> Mul for TilePerm<N> {
                 rhs[self[tile]]
             })) },
         }
+    }
+}
+
+impl<'a, const N: usize> Mul<&'a Self> for TilePerm<N> {
+    type Output = Self;
+
+    fn mul(self, rhs: &'a Self) -> Self::Output {
+        &self * rhs
+    }
+}
+
+impl<const N: usize> Mul<TilePerm<N>> for &'_ TilePerm<N> {
+    type Output = TilePerm<N>;
+
+    fn mul(self, rhs: TilePerm<N>) -> Self::Output {
+        self * &rhs
+    }
+}
+
+impl<const N: usize> Mul for TilePerm<N> {
+    type Output = TilePerm<N>;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        &self * &rhs
     }
 }
 
@@ -121,3 +145,115 @@ impl<const N: usize> TilePerm<N> {
         result
     }
 }
+
+pub(crate) trait CubeOperation<const N: usize>: Into<TilePerm<N>> {
+    fn on(self, cube: &RubiksState<N>) -> RubiksState<N>;
+}
+
+impl<'a, const N: usize, Operation> CubeOperation<N> for &'a Operation 
+where
+    &'a Operation: Into<TilePerm<N>>
+{
+    fn on(self, cube: &RubiksState<N>) -> RubiksState<N> {
+        let tile_perm: TilePerm<N> = self.into();
+        tile_perm.on(cube)
+    }
+}
+
+impl<const N: usize> CubeOperation<N> for TilePerm<N> {
+    fn on(self, cube: &RubiksState<N>) -> RubiksState<N> {
+        let perm_inverse = self.inverse();
+        RubiksState { 
+            up: super::FaceState { 
+                vals: 
+                from_fn(|row| 
+                    from_fn(|col| 
+                        cube[
+                            perm_inverse[
+                                TilePos{face: Face::Up, row, col}
+                            ]
+                        ]
+                    )
+                ) 
+            }, 
+            down: super::FaceState {
+                vals:
+                from_fn(|row|
+                    from_fn(|col|
+                        cube[
+                            perm_inverse[
+                                TilePos{face: Face::Down, row, col}
+                            ]
+                        ]
+                    )
+                )
+            }, 
+            left: super::FaceState {
+                vals:
+                from_fn(|row|
+                    from_fn(|col|
+                        cube[
+                            perm_inverse[
+                                TilePos{face: Face::Left, row, col}
+                            ]
+                        ]
+                    )
+                )
+            }, 
+            right: super::FaceState {
+                vals:
+                from_fn(|row|
+                    from_fn(|col|
+                        cube[
+                            perm_inverse[
+                                TilePos{face: Face::Right, row, col}
+                            ]
+                        ]
+                    )
+                )
+            }, 
+            front: super::FaceState {
+                vals:
+                from_fn(|row|
+                    from_fn(|col|
+                        cube[
+                            perm_inverse[
+                                TilePos{face: Face::Front, row, col}
+                            ]
+                        ]
+                    )
+                )
+            }, 
+            back: super::FaceState {
+                vals:
+                from_fn(|row|
+                    from_fn(|col|
+                        cube[
+                            perm_inverse[
+                                TilePos{face: Face::Back, row, col}
+                            ]
+                        ]
+                    )
+                )
+            },
+        }
+    }
+}
+
+// notation cube * <Ops multiplied in order> also works once we've implemented something else that won't work as a blanket impl for annoying reasons...
+impl<const N: usize, T: CubeOperation<N>> Mul<T> for RubiksState<N> {
+    type Output = RubiksState<N>;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        rhs.on(&self)
+    }
+}
+
+pub(crate) trait NonTilePermOperation<const N: usize>: Into<TilePerm<N>> {}
+
+impl<const N: usize> NonTilePermOperation<N> for BasicMove<N> {}
+impl<const N: usize> NonTilePermOperation<N> for WideMove<N> {}
+impl<const N: usize> NonTilePermOperation<N> for SliceMove<N> {}
+impl<const N: usize> NonTilePermOperation<N> for RangeMove<N> {}
+impl<const N: usize> NonTilePermOperation<N> for MiddleMove<N> {}
+impl<const N: usize> NonTilePermOperation<N> for CubeRotation {}

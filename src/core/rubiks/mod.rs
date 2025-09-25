@@ -1,6 +1,9 @@
 pub mod moves;
 pub mod tiles;
 
+use std::ops::Index;
+
+use crate::core::rubiks::tiles::TilePos;
 use crate::core::Colour;
 use super::cube::geometry::{Face, FACES};
 use super::cube::schemes::{ColourScheme, ColourPerm};
@@ -247,6 +250,22 @@ impl<const DIM: usize> RubiksState<DIM> {
             right: FaceState::flat(scheme.right()),
             front: FaceState::flat(scheme.front()),
             back: FaceState::flat(scheme.back()),
+        }
+    }
+}
+
+impl<const N: usize> Index<TilePos> for RubiksState<N> {
+    type Output = Colour;
+
+    fn index(&self, index: TilePos) -> &Self::Output {
+        let TilePos { face, row, col } = index;
+        match face {
+            Face::Up => &self.up.vals[row][col],
+            Face::Down => &self.down.vals[row][col],
+            Face::Left => &self.left.vals[row][col],
+            Face::Right => &self.right.vals[row][col],
+            Face::Front => &self.front.vals[row][col],
+            Face::Back => &self.back.vals[row][col],
         }
     }
 }

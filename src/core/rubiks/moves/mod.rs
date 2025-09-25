@@ -54,6 +54,7 @@
 
 #[cfg(test)]
 mod tests;
+mod multiplication;
 
 /// Standard single-layer face turns using traditional Rubik's cube notation.
 ///
@@ -94,7 +95,8 @@ mod tests;
 /// - Advanced algorithms (F2L, OLL, PLL in CFOP method)
 /// - Mathematical analysis of cube group structure
 /// - Algorithm optimization and move count analysis
-pub enum BasicMove {
+#[derive(Clone, Copy, Debug)]
+pub enum BasicMove<const DIM: usize> {
     /// Up face 90° clockwise rotation
     U,
     /// Up face 180° rotation
@@ -158,21 +160,21 @@ pub use BasicMove::*;
 ///
 /// `BasicMoveInternal` instances are typically created through [`From`] conversions
 /// rather than direct construction, ensuring consistency with the notation system.
-pub struct BasicMoveInternal {
+pub struct BasicMoveInternal<const DIM: usize> {
     /// The cube face being rotated
     face: Face,
     /// The amount of rotation to apply
     amount: Angle
 }
 
-impl BasicMoveInternal {
+impl<const DIM: usize> BasicMoveInternal<DIM> {
     fn new(face: Face, amount: Angle) -> Self {
         BasicMoveInternal { face, amount }
     }
 }
 
-impl From<BasicMove> for BasicMoveInternal {
-    fn from(value: BasicMove) -> Self {
+impl<const N: usize> From<BasicMove<N>> for BasicMoveInternal<N> {
+    fn from(value: BasicMove<N>) -> Self {
         use Face::*;
         use Angle::*;
         let new = BasicMoveInternal::new;
@@ -233,7 +235,8 @@ impl From<BasicMove> for BasicMoveInternal {
 /// multiple layers simultaneously. They form a natural extension of the basic
 /// move group for larger cube dimensions. Note that opposite wide moves can
 /// affect overlapping slices, though they still commute.
-pub enum WideMove {
+#[derive(Clone, Copy, Debug)]
+pub enum WideMove<const DIM: usize> {
     /// Up face wide turn, 90° clockwise, with specified depth
     Uw(usize),
     /// Up face wide turn, 180°, with specified depth
@@ -278,7 +281,7 @@ pub use WideMove::*;
 /// Extracts the essential geometric information from a [`WideMove`] for use in
 /// cube manipulation algorithms. The depth parameter specifies how many layers
 /// from the named face should be rotated together.
-pub struct WideMoveInternal {
+pub struct WideMoveInternal<const DIM: usize> {
     /// The cube face being rotated
     face: Face,
     /// The amount of rotation to apply
@@ -287,14 +290,14 @@ pub struct WideMoveInternal {
     depth: usize
 }
 
-impl WideMoveInternal {
+impl<const DIM: usize> WideMoveInternal<DIM> {
     fn new(face: Face, amount: Angle, depth: usize) -> Self {
         WideMoveInternal { face, amount, depth }
     }
 }
 
-impl From<WideMove> for WideMoveInternal {
-    fn from(value: WideMove) -> Self {
+impl<const N: usize> From<WideMove<N>> for WideMoveInternal<N> {
+    fn from(value: WideMove<N>) -> Self {
         use Face::*;
         use Angle::*;
         let new = WideMoveInternal::new;
@@ -331,7 +334,8 @@ impl From<WideMove> for WideMoveInternal {
 /// # Notation: `[Face]s[Rotation]([Layer])`
 ///
 /// Examples: `Us(2)` (slice 2 from Up), `Rs3(4)` (slice 4 from Right, counterclockwise)
-pub enum SliceMove {
+#[derive(Clone, Copy, Debug)]
+pub enum SliceMove<const DIM: usize> {
     Us(usize),
     Us2(usize),
     Us3(usize),
@@ -356,7 +360,7 @@ pub use SliceMove::*;
 /// Internal representation of a slice move with face, rotation, and layer number.
 ///
 /// Extracts the essential parameters from a [`SliceMove`] for cube operations.
-pub struct SliceMoveInternal {
+pub struct SliceMoveInternal<const DIM: usize> {
     /// The cube face defining the layer numbering reference
     face: Face,
     /// The amount of rotation to apply
@@ -365,14 +369,14 @@ pub struct SliceMoveInternal {
     layer: usize
 }
 
-impl SliceMoveInternal {
+impl<const DIM: usize> SliceMoveInternal<DIM> {
     fn new(face: Face, amount: Angle, layer: usize) -> Self {
         SliceMoveInternal { face, amount, layer }
     }
 }
 
-impl From<SliceMove> for SliceMoveInternal {
-    fn from(value: SliceMove) -> Self {
+impl<const N: usize> From<SliceMove<N>> for SliceMoveInternal<N> {
+    fn from(value: SliceMove<N>) -> Self {
         use Face::*;
         use Angle::*;
         let new = SliceMoveInternal::new;
@@ -408,7 +412,8 @@ impl From<SliceMove> for SliceMoveInternal {
 /// # Notation: `[Face]r[Rotation]([Start], [End])`
 ///
 /// Examples: `Ur(2,4)` (layers 2-4 from Up), `Lr3(1,3)` (layers 1-3 from Left, counterclockwise)
-pub enum RangeMove {
+#[derive(Clone, Copy, Debug)]
+pub enum RangeMove<const DIM: usize> {
     Ur(usize,usize),
     Ur2(usize,usize),
     Ur3(usize,usize),
@@ -433,7 +438,7 @@ pub use RangeMove::*;
 /// Internal representation of a range move with face, rotation, and layer bounds.
 ///
 /// Extracts the essential parameters from a [`RangeMove`] for cube operations.
-pub struct RangeMoveInternal {
+pub struct RangeMoveInternal<const DIM: usize> {
     /// The cube face defining the layer numbering reference
     face: Face,
     /// The amount of rotation to apply
@@ -444,14 +449,14 @@ pub struct RangeMoveInternal {
     end_layer: usize
 }
 
-impl RangeMoveInternal {
+impl<const DIM: usize> RangeMoveInternal<DIM> {
     fn new(face: Face, amount: Angle, start_layer: usize, end_layer: usize) -> Self {
         RangeMoveInternal { face, amount, start_layer, end_layer }
     }
 }
 
-impl From<RangeMove> for RangeMoveInternal {
-    fn from(value: RangeMove) -> Self {
+impl<const N: usize> From<RangeMove<N>> for RangeMoveInternal<N> {
+    fn from(value: RangeMove<N>) -> Self {
         use Face::*;
         use Angle::*;
         let new = RangeMoveInternal::new;
@@ -495,7 +500,8 @@ impl From<RangeMove> for RangeMoveInternal {
 /// Middle moves form an important subset of slice operations, particularly
 /// useful in algorithms that manipulate cube parity and orientation states.
 /// They maintain the same rotational algebra as their corresponding face moves.
-pub enum MiddleMove {
+#[derive(Clone, Copy, Debug)]
+pub enum MiddleMove<const DIM: usize> {
     /// Middle slice 90° clockwise (like L)
     M,
     /// Middle slice 180°
@@ -521,21 +527,21 @@ pub use MiddleMove::*;
 ///
 /// Maps traditional middle slice notation to the equivalent face operations
 /// according to standard cube solving conventions.
-pub struct MiddleMoveInternal {
+pub struct MiddleMoveInternal<const DIM: usize> {
     /// The equivalent face that defines the rotation direction
     face: Face,
     /// The amount of rotation to apply
     amount: Angle
 }
 
-impl MiddleMoveInternal {
+impl<const DIM: usize> MiddleMoveInternal<DIM> {
     fn new(face: Face, amount: Angle) -> Self {
         MiddleMoveInternal { face, amount }
     }
 }
 
-impl From<MiddleMove> for MiddleMoveInternal {
-    fn from(value: MiddleMove) -> Self {
+impl<const N: usize> From<MiddleMove<N>> for MiddleMoveInternal<N> {
+    fn from(value: MiddleMove<N>) -> Self {
         use Face::*;
         use Angle::*;
         let new = MiddleMoveInternal::new;
@@ -553,4 +559,16 @@ impl From<MiddleMove> for MiddleMoveInternal {
     }
 }
 
-use crate::{core::Angle, Face};
+use crate::{core::{rubiks::tiles::TilePerm, Angle}, Face};
+
+pub(crate) trait Move<const N: usize> : Into<TilePerm<N>> {}
+
+impl<const N: usize> Move<N> for BasicMove<N> {}
+
+impl<const N: usize> Move<N> for WideMove<N> {}
+
+impl<const N: usize> Move<N> for SliceMove<N> {}
+
+impl<const N: usize> Move<N> for RangeMove<N> {}
+
+impl<const N: usize> Move<N> for MiddleMove<N> {}
