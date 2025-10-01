@@ -69,7 +69,7 @@ impl<const DIM: usize> RubiksState<DIM> {
     ///
     /// This provides a convenient way to access face data by [`Face`] enum value
     /// rather than accessing the struct fields directly.
-    pub fn face_state<'a>(&'a self, face: Face) -> &'a FaceState<DIM> {
+    pub fn face_state(&self, face: Face) -> &FaceState<DIM> {
         use Face::*;
         match face {
             Up => &self.up,

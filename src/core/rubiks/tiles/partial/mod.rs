@@ -138,7 +138,7 @@ impl<const N: usize> PartialTilePerm<N> {
     }
 }
 
-impl<'a, 'b, const N: usize> Mul<&'b PartialTilePerm<N>> for &'a PartialTilePerm<N> {
+impl<'b, const N: usize> Mul<&'b PartialTilePerm<N>> for &PartialTilePerm<N> {
     type Output = PartialTilePerm<N>;
     
     fn mul(self, rhs: &'b PartialTilePerm<N>) -> Self::Output {

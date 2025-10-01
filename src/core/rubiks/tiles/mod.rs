@@ -184,7 +184,7 @@ impl<const N: usize> Index<TilePos> for TilePerm<N> {
     }
 }
 
-impl<'a, 'b, const N: usize> Mul<&'b TilePerm<N>> for &'a TilePerm<N> {
+impl<const N: usize> Mul<&TilePerm<N>> for &TilePerm<N> {
     type Output = TilePerm<N>;
 
     /// Composes two tile permutations.

@@ -252,7 +252,7 @@ impl From<CubeRotation> for FacePerm {
     }
 }
 
-impl<'a, 'b, const N: usize> Mul<&'a TilePerm<N>> for &'b CubeRotation {
+impl<'a, const N: usize> Mul<&'a TilePerm<N>> for &CubeRotation {
     type Output = TilePerm<N>;
 
     fn mul(self, rhs: &'a TilePerm<N>) -> Self::Output {

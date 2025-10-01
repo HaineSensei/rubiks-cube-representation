@@ -151,7 +151,7 @@ pub struct CombinedRestriction<'a, 'b, const N: usize, First:Restriction<N>, Sec
     second: &'b Second,
 }
 
-impl<'a, 'b, const N: usize, First: Restriction<N>, Second:Restriction<N>> Restriction<N> for CombinedRestriction<'a, 'b, N, First, Second> {
+impl<const N: usize, First: Restriction<N>, Second:Restriction<N>> Restriction<N> for CombinedRestriction<'_, '_, N, First, Second> {
     type Iter = std::iter::Chain<<First as Restriction<N>>::Iter,<Second as Restriction<N>>::Iter>;
 
     fn restricted_positions(&self) -> Self::Iter {
@@ -482,7 +482,7 @@ pub struct SliceRangeIter<const N: usize> {
 
 fn slice_range<const N: usize>(face: Face, first_slice_index: usize, second_slice_index: usize) -> SliceRangeIter<N> {
     let remaining_iters = Box::new((first_slice_index..=second_slice_index)
-    .map(move |i| Slice { face: face, slice_index: i }.restricted_positions()));
+    .map(move |i| Slice { face, slice_index: i }.restricted_positions()));
     SliceRangeIter {
         curr_iter: None,
         remaining_iters
