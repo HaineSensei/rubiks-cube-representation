@@ -37,6 +37,8 @@
 //! then apply rotation b". This is the reverse of standard mathematical function composition.
 
 use std::{array::from_fn, ops::{Index, Mul}};
+use crate::core::rubiks::tiles::TilePerm;
+
 use super::geometry::{CubeDiag, Face};
 
 /// A cube rotation represented as a permutation of the four main diagonals.
@@ -247,6 +249,38 @@ impl From<CubeRotation> for FacePerm {
                 (_,_,_) => unreachable!("This triplet should be a permutation of these 3 terms")
             }
         }))
+    }
+}
+
+impl<'a, 'b, const N: usize> Mul<&'a TilePerm<N>> for &'b CubeRotation {
+    type Output = TilePerm<N>;
+
+    fn mul(self, rhs: &'a TilePerm<N>) -> Self::Output {
+        TilePerm::from(self) * rhs
+    }
+}
+
+impl<const N: usize> Mul<TilePerm<N>> for CubeRotation {
+    type Output = TilePerm<N>;
+
+    fn mul(self, rhs: TilePerm<N>) -> Self::Output {
+        &self * &rhs
+    }
+}
+
+impl<const N: usize> Mul<TilePerm<N>> for &CubeRotation {
+    type Output = TilePerm<N>;
+
+    fn mul(self, rhs: TilePerm<N>) -> Self::Output {
+        self*&rhs
+    }
+}
+
+impl<'a, const N: usize> Mul<&'a TilePerm<N>> for CubeRotation {
+    type Output = TilePerm<N>;
+
+    fn mul(self, rhs: &'a TilePerm<N>) -> Self::Output {
+        &self * rhs
     }
 }
 

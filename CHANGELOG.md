@@ -10,22 +10,28 @@ not formal releases on crates.io.
 
 ## [Unreleased]
 
-### TODO
-- Implement `From<&CubeRotation> for TilePerm<N>` conversion in tiles::implementations
-  - Map diagonal permutations to individual tile movements
-  - Handle rotation of tiles around cube faces according to geometric relationships
-- Implement `From<&Move> for TilePerm<N>` for all move types (`BasicMove`, `WideMove`, `SliceMove`, `RangeMove`, `MiddleMove`)
-  - Define how each move type affects individual tile positions
-  - Handle layer-specific movements and directional variants (2, 3) for multi-dimensional cubes
-- Create comprehensive tests for tile permutation system
-  - Test tile permutation composition and inverse operations
-  - Verify conversion accuracy from rotations and moves
-  - Test edge cases for different cube dimensions
+## [v0.1.0] - 2025-10-02
 
-### In Progress
-- Tile-level permutation system foundation complete, implementations pending
-
-### Completed
+### Added
+- Complete documentation for tile permutation system
+  - Module-level documentation for `restrictions`, `partial`, and `implementations` modules
+  - Comprehensive inline documentation for all geometric transformation algorithms
+  - `TilePerm::agree_on` method for slice-based permutation comparison
+- Comprehensive test suite for move implementations
+  - Tests verifying moves agree with cube rotations on affected slices
+  - Order and composition tests (M⁴ = identity, M² = M2)
+  - Multi-dimensional testing (3×3, 5×5 cubes)
+  - Coverage for all move types: `BasicMove`, `WideMove`, `SliceMove`, `RangeMove`, `MiddleMove`
+- `From<&Move> for TilePerm<N>` for all move types
+- `PartialTilePerm<N>` system for composable sparse permutations with multiplication and inverse
+- Helper functions for move construction (`rotate_face_only`, `rotate_outside_of_slice`)
+- Additional adjacency methods (`AdjacentFace::side_pos`, `side_pos_at_depth`, `Adjacencies::on_side`)
+- `FaceSide * Angle` operator for rotating cardinal directions
+- Public (crate-visible) fields on all `*MoveInternal` structs
+- 1-indexed layer notation for all move types (layer 1 = face itself)
+- Proper opposite face handling for slice_index == N-1 cases
+- `From<&CubeRotation> for TilePerm<N>` conversion with geometric tile transformations
+- Cube restriction framework (`Restriction<N>` trait, `Slice`, `SliceRange`) for slice-based analysis
 - `CubeOperation<N>` trait with blanket implementation for applying operations to `RubiksState<N>`
 - `Index<TilePos>` implementation for `RubiksState<N>` to access tile colors by position
 - Parameterized all move types by cube dimension (`BasicMove<N>`, `WideMove<N>`, etc.)

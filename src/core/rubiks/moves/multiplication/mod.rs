@@ -1,3 +1,41 @@
+//! Multiplication operator implementations for cube operations.
+//!
+//! This module provides `Mul` trait implementations enabling algebraic composition
+//! of all cube operations through the `*` operator. The goal is to support natural
+//! mathematical syntax like `rotation * move1 * move2`, where operations compose
+//! left-to-right following standard cubing notation.
+//!
+//! # Design Challenge: Trait Coherence
+//!
+//! Implementing multiplication for all combinations of operation types faces Rust's
+//! trait coherence restrictions. Ideally, we'd write:
+//! ```ignore
+//! impl<Op1: Into<TilePerm<N>>, Op2: Into<TilePerm<N>>> Mul<Op2> for Op1 { ... }
+//! ```
+//!
+//! But this violates the orphan rule since `Mul` is a foreign trait and `Op1` is
+//! an unconstrained type parameter (not covered by a local type).
+//!
+//! # Solution: Explicit Implementation Matrix
+//!
+//! Instead, we explicitly implement `Mul` for each combination where the left-hand
+//! type is local to this crate:
+//! - Each move type (`BasicMove`, `WideMove`, etc.) × any `Into<TilePerm<N>>`
+//! - `CubeRotation` × each move type (and `TilePerm<N>` elsewhere)
+//! - `TilePerm<N>` × any `NonTilePermOperation<N>` (marker trait workaround)
+//!
+//! This creates a complete multiplication table while satisfying coherence requirements.
+//!
+//! # Implementation Pattern
+//!
+//! All implementations follow the same pattern:
+//! 1. Convert both operands to `TilePerm<N>` via `Into`
+//! 2. Multiply the resulting tile permutations
+//! 3. Return the composed permutation
+//!
+//! For borrowed vs owned variants, we delegate to the core `&T * Op2` implementation
+//! to avoid code duplication.
+
 use std::ops::Mul;
 
 use crate::{core::rubiks::{moves::{BasicMove, MiddleMove, RangeMove, SliceMove, WideMove}, tiles::{NonTilePermOperation, TilePerm}}, CubeRotation};

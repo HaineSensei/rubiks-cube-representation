@@ -15,6 +15,7 @@ use super::cube::rotations::{CubeRotation, X, X3, Y, Y3};
 /// a standard orientation where `vals[0][0]` represents the top-left corner when
 /// viewing the face directly. The top-left corner position is defined by that face's
 /// [`principal_corner`](super::cube::geometry::Face::principal_corner).
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FaceState<const DIM: usize> {
     /// 2D array of colors representing the face's tiles
     pub vals: [[Colour;DIM];DIM]
@@ -47,6 +48,7 @@ impl<const DIM: usize> FaceState<DIM> {
 /// Each face is stored as a [`FaceState<DIM>`] containing the colors of all
 /// tiles on that face. This representation supports cubes of any size
 /// through the const generic `DIM` parameter.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RubiksState<const DIM: usize> {
     /// The up face (top of the cube)
     pub up: FaceState<DIM>,
@@ -257,6 +259,25 @@ impl<const DIM: usize> RubiksState<DIM> {
 impl<const N: usize> Index<TilePos> for RubiksState<N> {
     type Output = Colour;
 
+    /// Returns the color of the tile at the specified position.
+    ///
+    /// This implementation enables convenient tile color lookup using array indexing syntax:
+    /// ```ignore
+    /// let pos = TilePos { face: Face::Up, row: 1, col: 2 };
+    /// let color: &Colour = &cube[pos];
+    /// ```
+    ///
+    /// # Usage
+    ///
+    /// This indexing is used throughout the tile permutation system when applying
+    /// operations to cube state. The [`CubeOperation::on`](tiles::CubeOperation::on)
+    /// method uses this to look up source colors when constructing the transformed state.
+    ///
+    /// # Panics
+    ///
+    /// This will panic if `row >= N` or `col >= N`, as those would be out-of-bounds
+    /// array accesses. Proper usage requires [`TilePos`] values to satisfy the invariant
+    /// that row and column indices are less than the cube dimension.
     fn index(&self, index: TilePos) -> &Self::Output {
         let TilePos { face, row, col } = index;
         match face {

@@ -31,6 +31,10 @@
 //! These functions work together to enable the rotation system's core algorithm for converting
 //! between different representation formats.
 
+use std::ops::Mul;
+
+use crate::core::{rubiks::tiles::TilePos, Angle};
+
 /// Represents a cube corner using three boolean coordinates.
 ///
 /// Each corner is uniquely identified by its position relative to the cube's three primary axes:
@@ -130,6 +134,20 @@ pub enum Face {
 ///
 /// Useful for iteration over all faces or indexed access by the face's discriminant value.
 pub const FACES: [Face;6] = [Face::Up, Face::Down, Face::Left, Face::Right, Face::Front, Face::Back];
+
+impl Face {
+    pub fn opposite(self) -> Self {
+        use Face::*;
+        match self {
+            Up => Down,
+            Down => Up,
+            Left => Right,
+            Right => Left,
+            Front => Back,
+            Back => Front,
+        }
+    }
+}
 
 impl From<CubeCorner> for CubeDiag {
     /// Converts a cube corner to its corresponding main diagonal.
@@ -370,6 +388,96 @@ pub struct AdjacentFace {
     pub side: FaceSide
 }
 
+impl AdjacentFace {
+    /// Computes the tile position at a given index along this adjacent face's edge.
+    ///
+    /// This method returns the position of a tile along the edge specified by `self.side`,
+    /// where `index` counts tiles along that edge from a canonical starting point.
+    /// The index follows the edge in the direction that maintains consistent tile ordering
+    /// during rotations.
+    ///
+    /// # Algorithm
+    ///
+    /// For each cardinal direction, tiles are indexed starting from a specific corner:
+    /// - **North edge**: Index 0 starts at the west end, proceeding east (row 0, varying col)
+    /// - **East edge**: Index 0 starts at the north end, proceeding south (varying row, col N-1)
+    /// - **South edge**: Index 0 starts at the east end, proceeding west (row N-1, varying col reversed)
+    /// - **West edge**: Index 0 starts at the south end, proceeding north (varying row reversed, col 0)
+    ///
+    /// This indexing convention ensures that when tiles rotate around a slice, the ordering
+    /// is preserved as they move from one adjacent face to another.
+    ///
+    /// # Usage in Slice Iteration
+    ///
+    /// This method is used by the slice restriction iterators to enumerate all tiles
+    /// in a slice that are on the outer face (depth 0). For deeper slices, see
+    /// [`AdjacentFace::side_pos_at_depth`].
+    ///
+    /// # Parameters
+    ///
+    /// - `N`: The cube dimension (compile-time constant)
+    /// - `index`: Position along the edge (0 to N-1)
+    ///
+    /// # Returns
+    ///
+    /// A [`TilePos`] representing the tile at the given index on this edge.
+    pub fn side_pos<const N: usize>(&self, index: usize) -> TilePos {
+        let (row, col) = match self.side {
+            FaceSide::North => (0, index),
+            FaceSide::East => (index, N-1),
+            FaceSide::South => (N-1, N-1 - index),
+            FaceSide::West => (N-1 - index, 0),
+        };
+        TilePos { face: self.face, row, col}
+    }
+
+    /// Computes the tile position at a given index and depth along this adjacent face's edge.
+    ///
+    /// This extends [`AdjacentFace::side_pos`] by adding a `depth` parameter that specifies
+    /// how many layers inward from the edge the tile is located. This is essential for
+    /// calculating tile positions in internal slices.
+    ///
+    /// # Algorithm
+    ///
+    /// For each cardinal direction, the depth parameter moves tiles inward perpendicular
+    /// to the edge:
+    /// - **North edge**: Depth increases the row index (moving south into the face)
+    /// - **East edge**: Depth decreases the col index (moving west into the face)
+    /// - **South edge**: Depth decreases the row index (moving north into the face)
+    /// - **West edge**: Depth increases the col index (moving east into the face)
+    ///
+    /// The `index` parameter works the same as in [`AdjacentFace::side_pos`], indexing
+    /// along the edge in a consistent direction.
+    ///
+    /// # Usage in Slice Rotations
+    ///
+    /// This method is critical for implementing moves that affect internal slices.
+    /// When a slice at depth `d` is rotated, this method calculates where tiles on
+    /// adjacent faces at that same depth should move to.
+    ///
+    /// Used extensively in `rotate_outside_of_slice` to compute tile permutations for
+    /// any slice depth.
+    ///
+    /// # Parameters
+    ///
+    /// - `N`: The cube dimension (compile-time constant)
+    /// - `index`: Position along the edge (0 to N-1)
+    /// - `depth`: Distance from the outer edge into the face (0 to N-1)
+    ///
+    /// # Returns
+    ///
+    /// A [`TilePos`] representing the tile at the given index and depth.
+    pub fn side_pos_at_depth<const N: usize>(&self, index: usize, depth: usize) -> TilePos {
+        let (row, col) = match self.side {
+            FaceSide::North => (depth, index),
+            FaceSide::East => (index, (N-1) - depth),
+            FaceSide::South => ((N-1) - depth, (N-1) - index),
+            FaceSide::West => ((N-1) - index, depth),
+        };
+        TilePos { face: self.face, row, col }
+    }
+}
+
 /// Complete adjacency information for a cube face, mapping each edge to its neighbor.
 ///
 /// This struct provides the full adjacency context for a face by specifying
@@ -396,7 +504,7 @@ pub struct AdjacentFace {
 /// This struct is typically created by [`Face::adjacencies`] and provides
 /// convenient access to all neighboring relationships at once, rather than
 /// requiring separate queries for each edge direction.
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Adjacencies {
     /// The face adjacent to the north edge
     pub north: AdjacentFace,
@@ -406,6 +514,42 @@ pub struct Adjacencies {
     pub south: AdjacentFace,
     /// The face adjacent to the west edge
     pub west: AdjacentFace
+}
+
+impl Adjacencies {
+    /// Returns the adjacent face information for a specific cardinal direction.
+    ///
+    /// This method provides convenient access to individual adjacency relationships
+    /// from the complete [`Adjacencies`] structure. Given a cardinal direction
+    /// (North, East, South, or West), it returns which face is adjacent in that
+    /// direction and which edge of that face forms the connection.
+    ///
+    /// # Usage
+    ///
+    /// This is commonly used in algorithms that iterate over all four edges of a face,
+    /// such as slice restriction iterators and tile permutation calculations. Instead
+    /// of manually matching on the direction, this method provides clean access to
+    /// the adjacency data.
+    ///
+    /// Used extensively in `rotate_outside_of_slice` where all four adjacent faces
+    /// need to be processed in sequence.
+    ///
+    /// # Parameters
+    ///
+    /// - `side`: The [`FaceSide`] (cardinal direction) to query
+    ///
+    /// # Returns
+    ///
+    /// The [`AdjacentFace`] for that direction, specifying both the neighboring face
+    /// and the specific edge where the adjacency occurs.
+    pub fn on_side(self, side: FaceSide) -> AdjacentFace {
+        match side {
+            FaceSide::North => self.north,
+            FaceSide::East => self.east,
+            FaceSide::South => self.south,
+            FaceSide::West => self.west,
+        }
+    }
 }
 
 impl Face {
@@ -523,6 +667,69 @@ impl Face {
             FaceSide::East => adjacencies.east,
             FaceSide::South => adjacencies.south,
             FaceSide::West => adjacencies.west,
+        }
+    }
+}
+
+impl Mul<Angle> for FaceSide {
+    type Output = FaceSide;
+
+    /// Rotates a cardinal direction by the given angle.
+    ///
+    /// This operation rotates one of the four cardinal directions (North, East, South, West)
+    /// around a face's center by the specified angle. The rotation follows the clockwise
+    /// convention when viewing the face from outside the cube.
+    ///
+    /// # Algorithm
+    ///
+    /// The cardinal directions form a cyclic group under rotation:
+    /// - **Clockwise sequence**: North → East → South → West → North
+    /// - **Zero**: Direction unchanged
+    /// - **CWQuarter**: One step clockwise
+    /// - **Half**: Two steps (opposite direction)
+    /// - **ACWQuarter**: Three steps clockwise (one step counterclockwise)
+    ///
+    /// # Usage in Tile Permutations
+    ///
+    /// This operator is critical for calculating edge tile movements during rotations.
+    /// When a slice is rotated, tiles along the edges move to adjacent faces. This
+    /// operator determines which edge of the adjacent face receives the tiles.
+    ///
+    /// For example, in `rotate_outside_of_slice`, the expression `side * angle` computes
+    /// which edge of each adjacent face the tiles should move to after rotation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rubiks_cube_representation::core::cube::geometry::FaceSide;
+    /// use rubiks_cube_representation::core::Angle;
+    ///
+    /// // Rotating North by 90° clockwise gives East
+    /// assert_eq!(FaceSide::North * Angle::CWQuarter, FaceSide::East);
+    ///
+    /// // Rotating East by 180° gives West
+    /// assert_eq!(FaceSide::East * Angle::Half, FaceSide::West);
+    ///
+    /// // Rotating South by 90° counterclockwise gives East
+    /// assert_eq!(FaceSide::South * Angle::ACWQuarter, FaceSide::East);
+    /// ```
+    fn mul(self, rhs: Angle) -> Self::Output {
+        use FaceSide::*;
+        use Angle::*;
+        match (self, rhs) {
+            (x, Zero) => x,
+            (North, CWQuarter) => East,
+            (North, Half) => South,
+            (North, ACWQuarter) => West,
+            (East, CWQuarter) => South,
+            (East, Half) => West,
+            (East, ACWQuarter) => North,
+            (South, CWQuarter) => West,
+            (South, Half) => North,
+            (South, ACWQuarter) => East,
+            (West, CWQuarter) => North,
+            (West, Half) => East,
+            (West, ACWQuarter) => South,
         }
     }
 }

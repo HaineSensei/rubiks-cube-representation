@@ -162,9 +162,10 @@ pub use BasicMove::*;
 /// rather than direct construction, ensuring consistency with the notation system.
 pub struct BasicMoveInternal<const DIM: usize> {
     /// The cube face being rotated
-    face: Face,
+    pub(crate) face: Face,
     /// The amount of rotation to apply
-    amount: Angle
+    pub(crate)
+     amount: Angle
 }
 
 impl<const DIM: usize> BasicMoveInternal<DIM> {
@@ -283,11 +284,11 @@ pub use WideMove::*;
 /// from the named face should be rotated together.
 pub struct WideMoveInternal<const DIM: usize> {
     /// The cube face being rotated
-    face: Face,
+    pub(crate) face: Face,
     /// The amount of rotation to apply
-    amount: Angle,
+    pub(crate) amount: Angle,
     /// Number of layers from the face to include in the rotation
-    depth: usize
+    pub(crate) depth: usize
 }
 
 impl<const DIM: usize> WideMoveInternal<DIM> {
@@ -362,11 +363,11 @@ pub use SliceMove::*;
 /// Extracts the essential parameters from a [`SliceMove`] for cube operations.
 pub struct SliceMoveInternal<const DIM: usize> {
     /// The cube face defining the layer numbering reference
-    face: Face,
+    pub(crate) face: Face,
     /// The amount of rotation to apply
-    amount: Angle,
+    pub(crate) amount: Angle,
     /// The specific layer number to rotate
-    layer: usize
+    pub(crate) layer: usize
 }
 
 impl<const DIM: usize> SliceMoveInternal<DIM> {
@@ -440,13 +441,13 @@ pub use RangeMove::*;
 /// Extracts the essential parameters from a [`RangeMove`] for cube operations.
 pub struct RangeMoveInternal<const DIM: usize> {
     /// The cube face defining the layer numbering reference
-    face: Face,
+    pub(crate) face: Face,
     /// The amount of rotation to apply
-    amount: Angle,
+    pub(crate) amount: Angle,
     /// The first layer in the range (inclusive)
-    start_layer: usize,
+    pub(crate) start_layer: usize,
     /// The last layer in the range (inclusive)
-    end_layer: usize
+    pub(crate) end_layer: usize
 }
 
 impl<const DIM: usize> RangeMoveInternal<DIM> {
@@ -529,9 +530,9 @@ pub use MiddleMove::*;
 /// according to standard cube solving conventions.
 pub struct MiddleMoveInternal<const DIM: usize> {
     /// The equivalent face that defines the rotation direction
-    face: Face,
+    pub(crate) face: Face,
     /// The amount of rotation to apply
-    amount: Angle
+    pub(crate) amount: Angle
 }
 
 impl<const DIM: usize> MiddleMoveInternal<DIM> {

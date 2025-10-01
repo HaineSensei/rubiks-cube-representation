@@ -1,5 +1,5 @@
 use crate::{FACES, CubeDiag};
-use super::{Face, FaceSide, FACE_SIDES};
+use super::{FaceSide, FACE_SIDES};
 
 #[test]
 fn test_principal_corner_consistency() {
