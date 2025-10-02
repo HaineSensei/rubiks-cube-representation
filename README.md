@@ -116,6 +116,16 @@ The mathematical foundation is complete with a fully tested tile permutation sys
 - Solving algorithms and analysis tools
 - Pattern generation and recognition
 
+## Contributions
+
+This project is a collaboration between [HaineSensei](https://github.com/HaineSensei) and [Claude](https://claude.ai) (Anthropic's AI assistant).
+
+**HaineSensei** designed and implemented all mathematical foundations, core algorithms, and system architecture. This includes the group-theoretic approach, tile permutation system, geometric algorithms, and type system design.
+
+**Claude** provided comprehensive documentation (including this `README.md`), test suite development, and supporting tasks like code restructuring and bug identification.
+
+This division ensures deep understanding of all complex logic remains with the human developer, while AI assistance accelerates the tedious but essential work of documentation and testing.
+
 ## Images
 
 [`Japanese_colors.webp`](Japanese_colors.webp) and [`Western_colors.webp`](Western_colors.webp) are from [here](https://rubiks.fandom.com/wiki/Western_Color_Scheme)
