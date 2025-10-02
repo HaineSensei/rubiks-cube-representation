@@ -25,7 +25,7 @@ use std::{array::from_fn, ops::{Index, Mul}};
 
 use crate::{core::rubiks::{moves::{BasicMove, MiddleMove, RangeMove, SliceMove, WideMove}, tiles::{partial::PartialTilePerm, restrictions::Restriction}}, CubeRotation, Face, RubiksState};
 
-mod implementations;
+pub mod implementations;
 pub mod restrictions;
 pub mod partial;
 
@@ -166,6 +166,40 @@ pub struct TilePerm<const N: usize> {
     pub front: TileGrid<N>,
     /// Permutation grid for the back face
     pub back: TileGrid<N>
+}
+
+impl<const N: usize> TilePerm<N> {
+    pub const ID: Self = {
+        let mut id = TilePerm {
+            up: TileGrid { vals: [[TilePos{ face: Face::Up, row: 0, col: 0 };N];N] },
+            down: TileGrid { vals: [[TilePos{ face: Face::Down, row: 0, col: 0 };N];N] },
+            left: TileGrid { vals: [[TilePos{ face: Face::Left, row: 0, col: 0 };N];N] },
+            right: TileGrid { vals: [[TilePos{ face: Face::Right, row: 0, col: 0 };N];N] },
+            front: TileGrid { vals: [[TilePos{ face: Face::Front, row: 0, col: 0 };N];N] },
+            back: TileGrid { vals: [[TilePos{ face: Face::Back, row: 0, col: 0 };N];N] },
+        };
+        let mut row = 0;
+        while row < N {
+            let mut col = 0;
+            while col < N {
+                id.up.vals[row][col].row = row;
+                id.up.vals[row][col].col = col;
+                id.down.vals[row][col].row = row;
+                id.down.vals[row][col].col = col;
+                id.left.vals[row][col].row = row;
+                id.left.vals[row][col].col = col;
+                id.right.vals[row][col].row = row;
+                id.right.vals[row][col].col = col;
+                id.front.vals[row][col].row = row;
+                id.front.vals[row][col].col = col;
+                id.back.vals[row][col].row = row;
+                id.back.vals[row][col].col = col;
+                col += 1;
+            }
+            row += 1
+        }
+        id
+    };
 }
 
 impl<const N: usize> Index<TilePos> for TilePerm<N> {
